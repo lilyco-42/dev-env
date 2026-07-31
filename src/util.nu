@@ -11,6 +11,11 @@ export def is-windows []: nothing -> bool { (os) == "windows" }
 export def is-macos []: nothing -> bool { (os) == "macos" }
 export def is-linux []: nothing -> bool { (os) == "linux" }
 
+# Termux (Android) 检测: $PREFIX 指向 com.termux 目录
+export def is-termux []: nothing -> bool {
+  ((($env.PREFIX? | default "") | str contains "com.termux") or (($env.TERMUX_VERSION? | default "") | is-not-empty))
+}
+
 # 命令是否可用
 export def has [cmd: string]: nothing -> bool {
   (which $cmd | is-not-empty)
@@ -30,6 +35,11 @@ export def is-dry-run []: nothing -> bool {
 
 # 检测可用的包管理器 (按优先级)
 export def pkg-manager []: nothing -> string {
+  if (is-termux) {
+    if (has pkg) { return "pkg" }
+    if (has apt-get) { return "apt-get" }
+    return ""
+  }
   if (is-windows) {
     for p in ["scoop" "winget" "choco"] {
       if (has $p) { return $p }
@@ -57,6 +67,7 @@ export def run-cmd [cmd: list<string>]: nothing -> bool {
 # 需要提权时自动加 sudo (root 或 Windows 不加)
 export def run-sudo [cmd: list<string>]: nothing -> bool {
   if (is-windows) { return (run-cmd $cmd) }
+  if (is-termux) { return (run-cmd $cmd) }
   if (is-root) { return (run-cmd $cmd) }
   run-cmd (["sudo"] | append $cmd)
 }
@@ -76,6 +87,7 @@ export def package-install [pkg: string]: nothing -> bool {
     return (if (pkg-manager) == "brew" { run-cmd [brew install $pkg] } else { false })
   }
   match $mgr {
+    "pkg" => (run-cmd [pkg install -y $pkg])
     "apt-get" => { let _ = (run-sudo [apt-get update]); run-sudo [apt-get install -y $pkg] }
     "dnf" => (run-sudo [dnf install -y $pkg])
     "pacman" => (run-sudo [pacman -S --noconfirm $pkg])

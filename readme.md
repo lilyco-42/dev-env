@@ -54,6 +54,31 @@ nu dev-env.nu --with-extra --with-parsers
 
 安装完成后运行 `nvim`, 首次启动自动安装插件; 打开任意文件时 Mason 自动补齐 LSP。
 
+### 一键安装 (curl / irm)
+
+无需手动装 nushell, 引导脚本会自动安装它并下载运行单文件产物:
+
+| 平台 | 命令 |
+| --- | --- |
+| termux (Android) / linux / macos / ios (iSH) | `curl -fsSL https://github.com/lilyco-42/dev-env/releases/latest/download/install.sh \| sh` |
+| windows (PowerShell) | `irm https://github.com/lilyco-42/dev-env/releases/latest/download/install.ps1 \| iex` |
+
+引导脚本只做两件事: 缺失时安装 nushell (pkg / apt / dnf / pacman / apk / brew / cargo),
+下载 `dev-env.nu` 到用户 bin 目录并执行; 真正的安装逻辑仍全部在 nushell 内。
+
+> **iOS 说明**: 需要 [iSH](https://ish.app) (Alpine userspace, 走 `apk` 路径);
+> a-Shell 等无包管理器的环境暂不支持。
+>
+> **Termux 说明**: 自动识别并使用 `pkg`, 无需 root。
+
+已有 nushell 时也可以直接下载产物运行:
+
+```sh
+curl -fsSL https://github.com/lilyco-42/dev-env/releases/latest/download/dev-env.nu -o dev-env.nu
+nu dev-env.nu --dry-run          # 先预览
+nu dev-env.nu --with-parsers     # 完整安装
+```
+
 ## 🔧 参数
 
 | 参数 | 说明 |
