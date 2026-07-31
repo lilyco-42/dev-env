@@ -10,7 +10,7 @@
 #   nu pack.nu --no-compress   # 仅 base64 打包 (调试)
 #   nu pack.nu --out build/dev-env.nu
 
-const VERSION = "0.1.1"
+const VERSION = "0.1.2"
 
 def print-help [] {
   print "pack.nu — dev-env 自压缩打包工具"
@@ -57,10 +57,14 @@ def wrap-b64 [s: string, width: int = 100]: nothing -> string {
 }
 
 def build-targz [stage: path, rels: list<string>]: nothing -> string {
-  let payload = ($stage | path join "payload.bin")
-  run-external tar "-czf" $payload "-C" $stage ...$rels
-  if $env.LAST_EXIT_CODE != 0 { error make { msg: "tar 打包失败" } }
-  open --raw $payload | encode base64
+  # 用相对路径打包, 兼容 Git Bash/MSYS 的 GNU tar (Windows 盘符 C: 会被当成远程主机)
+  let old = ($env.PWD)
+  cd $stage
+  run-external tar "-czf" "payload.bin" ...$rels
+  let rc = $env.LAST_EXIT_CODE
+  cd $old
+  if $rc != 0 { error make { msg: "tar 打包失败" } }
+  open --raw ($stage | path join "payload.bin") | encode base64
 }
 
 def build-raw [stage: path, rels: list<string>]: nothing -> string {
@@ -82,14 +86,15 @@ const PAYLOAD_FORMAT = \"__PAYLOAD_FORMAT__\"
 const PAYLOAD_B64 = \"__PAYLOAD_B64__\"
 
 def extract [dir: path] {
-  let payload = ($dir | path join \"payload.bin\")
+  cd $dir
+  let payload = \"payload.bin\"
   ($PAYLOAD_B64
     | str replace -a \"\\r\" \"\"
     | str replace -a \"\\n\" \"\"
     | decode base64
     | save --raw $payload)
   if ($PAYLOAD_FORMAT == \"tar.gz\") {
-    run-external tar \"-xzf\" $payload \"-C\" $dir
+    run-external tar \"-xzf\" $payload
     if $env.LAST_EXIT_CODE != 0 { error make { msg: \"解压失败 (tar)\" } }
   } else {
     let manifest = (open --raw $payload | decode utf-8)
@@ -116,6 +121,7 @@ def main [
   --self-extract: string
   ...rest: string
 ] {
+  let cwd0 = ($env.PWD)
   if $version {
     print $\"dev-env ($VERSION) — 自解压跨平台开发环境安装器\"
     return
@@ -123,6 +129,7 @@ def main [
   if not ($self_extract | is-empty) {
     mkdir $self_extract
     extract $self_extract
+    cd $cwd0
     print $\"✓ 已解压到 ($self_extract)\"
     return
   }
@@ -144,6 +151,7 @@ def main [
     print -e $\"(ansi red)✗(ansi reset) 运行失败: ($e.msg)\"
     1
   })
+  cd $cwd0
   rm -rf $tmp
   exit $rc
 }

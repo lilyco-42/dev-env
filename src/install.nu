@@ -3,7 +3,7 @@ use ./util.nu *
 use ./tools.nu *
 use ./neovim.nu *
 
-const VERSION = "0.1.1"
+const VERSION = "0.1.2"
 
 def print-banner [] {
   print ""

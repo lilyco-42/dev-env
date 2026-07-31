@@ -196,6 +196,7 @@ require("lazy").setup({
   { "echasnovski/mini.statusline", event = "VeryLazy", opts = {} },
 }, {
   checker = { enabled = false },
+  rocks = { enabled = false },
   performance = { cache = { enabled = true }, reset_packpath = true },
 })
 
