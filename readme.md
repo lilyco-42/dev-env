@@ -2,18 +2,21 @@
   <h1>⚡ dev-env</h1>
   <p>nushell 跨平台一键开发环境搭建 — 单文件自解压, 无 pwsh / bash 双份脚本</p>
 
-  ![License](https://img.shields.io/badge/license-MIT-blue)
+  ![Release](https://img.shields.io/github/v/release/lilyco-42/dev-env)
+  ![Stars](https://img.shields.io/github/stars/lilyco-42/dev-env)
+  ![License](https://img.shields.io/github/license/lilyco-42/dev-env)
   ![Nushell](https://img.shields.io/badge/nushell-0.114-blue)
-  ![Platform](https://img.shields.io/badge/platform-windows%20%7C%20macos%20%7C%20linux-lightgrey)
-  ![Size](https://img.shields.io/badge/single%20file-~15KB-success)
+  ![Platform](https://img.shields.io/badge/platform-win%20%7C%20macos%20%7C%20linux%20%7C%20termux%20%7C%20ios-lightgrey)
 </div>
 
 ---
 
 ## ✨ 特性
 
-- **单一脚本语言: nushell** — 逻辑只有一份, Windows / Linux / macOS 通用,
-  不再出现"Windows 写 pwsh、其他平台写 bash"的两份脚本。
+- **单一脚本语言: nushell** — 逻辑只有一份, Windows / Linux / macOS / Termux / iOS(iSH)
+  通用, 不再出现"Windows 写 pwsh、其他平台写 bash"的两份脚本。
+- **一键安装 (curl / irm)** — 引导脚本自动装 nushell 并下载运行单文件产物,
+  Termux 自动识别 `pkg`, 免 root。
 - **自压缩单文件产物** — `pack.nu` 把源码 gzip 压缩后嵌入单个 `dev-env.nu`,
   运行时自解压到临时目录再执行 (类似 shc / shar 的自解压归档)。
 - **压缩/解压只依赖 `tar`** — Windows 10+ 内置 bsdtar, 无需额外安装。
@@ -28,33 +31,7 @@
 
 ## 🚀 快速开始
 
-唯一依赖: [nushell](https://www.nushell.sh) (建议 0.114+):
-
-```sh
-winget install nushell        # Windows
-brew install nushell          # macOS
-cargo install nu              # 通用 (有 Rust 时)
-```
-
-下载单文件产物 (或从源码打包, 见下文), 然后:
-
-```sh
-# 先预览将要执行的命令
-nu dev-env.nu --dry-run
-
-# 正式安装 (核心工具 + nvim + lazy.nvim)
-nu dev-env.nu
-
-# 完整安装: 自动装 cargo-binstall + tree-sitter CLI 并编译解析器
-nu dev-env.nu --with-parsers
-
-# 连可选工具一起装 (fd/bat/fzf/zoxide/eza/jq/lazygit/delta/starship/fastfetch)
-nu dev-env.nu --with-extra --with-parsers
-```
-
-安装完成后运行 `nvim`, 首次启动自动安装插件; 打开任意文件时 Mason 自动补齐 LSP。
-
-### 一键安装 (curl / irm)
+### 一键安装
 
 无需手动装 nushell, 引导脚本会自动安装它并下载运行单文件产物:
 
@@ -63,21 +40,27 @@ nu dev-env.nu --with-extra --with-parsers
 | termux (Android) / linux / macos / ios (iSH) | `curl -fsSL https://github.com/lilyco-42/dev-env/releases/latest/download/install.sh \| sh` |
 | windows (PowerShell) | `irm https://github.com/lilyco-42/dev-env/releases/latest/download/install.ps1 \| iex` |
 
-引导脚本只做两件事: 缺失时安装 nushell (pkg / apt / dnf / pacman / apk / brew / cargo),
-下载 `dev-env.nu` 到用户 bin 目录并执行; 真正的安装逻辑仍全部在 nushell 内。
-
 > **iOS 说明**: 需要 [iSH](https://ish.app) (Alpine userspace, 走 `apk` 路径);
 > a-Shell 等无包管理器的环境暂不支持。
 >
 > **Termux 说明**: 自动识别并使用 `pkg`, 无需 root。
 
-已有 nushell 时也可以直接下载产物运行:
+### 已有 nushell
+
+直接下载单文件产物运行 (nushell 建议 0.114+):
 
 ```sh
 curl -fsSL https://github.com/lilyco-42/dev-env/releases/latest/download/dev-env.nu -o dev-env.nu
-nu dev-env.nu --dry-run          # 先预览
-nu dev-env.nu --with-parsers     # 完整安装
+
+nu dev-env.nu --dry-run            # 先预览将要执行的命令
+nu dev-env.nu                      # 核心工具 + nvim + lazy.nvim
+nu dev-env.nu --with-parsers       # 完整安装: 自动装 cargo-binstall + tree-sitter CLI 并编译解析器
+nu dev-env.nu --with-extra --with-parsers   # 连可选工具一起装
 ```
+
+安装完成后运行 `nvim`, 首次启动自动安装插件; 打开任意文件时 Mason 自动补齐 LSP。
+
+也可从源码打包 (见下文「自压缩机制」), 或下载 [Releases](https://github.com/lilyco-42/dev-env/releases) 里的资产。
 
 ## 🔧 参数
 
@@ -102,16 +85,18 @@ nu dev-env.nu --with-parsers     # 完整安装
 | 可选 | starship / fastfetch | 提示符 / 系统信息 |
 | LSP | rust-analyzer / ts_ls / lua_ls / html / cssls / jsonls / yamlls / tailwindcss | Mason 自动安装 |
 
-安装策略: 优先包管理器 (scoop / winget / choco / brew / apt / dnf / pacman / apk),
+安装策略: 优先包管理器 (pkg / scoop / winget / choco / brew / apt / dnf / pacman / apk),
 失败或缺失时自动回退 GitHub Release 下载 (资产命名规则经真实 Release 数据校验)。
 
 ## 🧬 自压缩机制
 
 ```text
-pack.nu          # 自压缩打包工具: 读 src/ → gzip → base64 → 单文件产物
-  │
-  ▼
-dev-env.nu       # 运行时: 解压到临时目录 → 调用 nushell 执行 install.nu
+install.sh / install.ps1    # 一键引导: 装 nushell + 下载产物
+        │
+        ▼
+dev-env.nu                  # 自压缩产物: 解压到临时目录 → 执行内置 install.nu
+        ▲
+pack.nu                     # 打包工具: 读 src/ → gzip → base64 → 单文件
 ```
 
 ```sh
@@ -123,11 +108,13 @@ nu dist/dev-env.nu --self-extract <目录>   # 查看内置源码, 验证产物
 ## 🛠 开发
 
 ```text
-src/install.nu       # 入口 (参数解析 + 流程编排)
-src/util.nu          # 跨平台工具函数 (包管理器 / 提权 / 运行)
-src/tools.nu         # 工具安装 (含 GitHub Release 兜底下载)
-src/neovim.nu        # nvim 安装 + lazy.nvim 配置 + treesitter 编译链
-src/assets/init.lua  # nvim 配置模板 (lazy.nvim 引导 + 精简插件)
+install.sh / install.ps1    # 一键安装引导 (装 nushell + 下载产物)
+pack.nu                     # 自压缩打包工具
+src/install.nu              # 入口 (参数解析 + 流程编排)
+src/util.nu                 # 跨平台工具函数 (包管理器 / 提权 / 运行 / termux)
+src/tools.nu                # 工具安装 (含 GitHub Release 兜底下载)
+src/neovim.nu               # nvim 安装 + lazy.nvim 配置 + treesitter 编译链
+src/assets/init.lua         # nvim 配置模板 (lazy.nvim 引导 + 精简插件)
 ```
 
 开发模式直接跑源码: `nu src/install.nu --dry-run`
@@ -136,7 +123,7 @@ src/assets/init.lua  # nvim 配置模板 (lazy.nvim 引导 + 精简插件)
 
 工具清单与"非交互一键安装"的体验参照
 [air-plus/oh-my-termux](https://github.com/air-plus/oh-my-termux),
-本项目把它的 Termux 专用工具映射为跨平台等价物:
+本项目把它的 Termux 专用工具映射为跨平台等价物, 同时本身也原生支持 Termux:
 
 | oh-my-termux | 本项目对应 | 状态 |
 | --- | --- | --- |
@@ -180,6 +167,13 @@ src/assets/init.lua  # nvim 配置模板 (lazy.nvim 引导 + 精简插件)
 
 > 工具优先走系统包管理器; Release 兜底下载的资产命名按官方 release 数据
 > 维护。若网络受限, 可配置镜像后重试, 或改用包管理器手动安装。
+</details>
+
+<details>
+  <summary>iOS 怎么用?</summary>
+
+> 安装 [iSH](https://ish.app) 后使用 Unix 一键命令 (`apk` 路径)。
+> 也可以直接用 a-Shell 等环境手动安装 nushell 后运行产物。
 </details>
 
 ## 📄 License
