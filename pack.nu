@@ -10,7 +10,7 @@
 #   nu pack.nu --no-compress   # 仅 base64 打包 (调试)
 #   nu pack.nu --out build/dev-env.nu
 
-const VERSION = "0.1.0"
+const VERSION = "0.1.1"
 
 def print-help [] {
   print "pack.nu — dev-env 自压缩打包工具"
@@ -77,7 +77,7 @@ def render [b64: string, format: string, out: path]: nothing -> record<size: int
 #!/usr/bin/env nu
 # dev-env — 自解压跨平台开发环境安装器 (由 pack.nu 生成, 请勿手改)
 # 重新打包: nu pack.nu ; 查看内置源码: nu <本文件> --self-extract <目录>
-const VERSION = \"0.1.0\"
+const VERSION = \"__VERSION__\"
 const PAYLOAD_FORMAT = \"__PAYLOAD_FORMAT__\"
 const PAYLOAD_B64 = \"__PAYLOAD_B64__\"
 
@@ -150,6 +150,7 @@ def main [
 "
   let content = ($tpl
     | str trim
+    | str replace "__VERSION__" $VERSION
     | str replace "__PAYLOAD_FORMAT__" $format
     | str replace "__PAYLOAD_B64__" $wrapped)
   mkdir ($out | path dirname)

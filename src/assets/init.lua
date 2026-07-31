@@ -74,12 +74,6 @@ require("lazy").setup({
   { "williamboman/mason.nvim", cmd = "Mason", opts = {} },
   { "williamboman/mason-lspconfig.nvim",
     dependencies = { "mason.nvim" },
-    opts = {
-      ensure_installed = {
-        "lua_ls", "rust_analyzer", "tsserver",
-        "html", "cssls", "jsonls", "yamlls", "tailwindcss",
-      },
-    },
   },
   { "neovim/nvim-lspconfig",
     dependencies = { "williamboman/mason-lspconfig.nvim" },
